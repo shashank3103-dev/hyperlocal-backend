@@ -1,0 +1,59 @@
+########################################
+# Node.js
+########################################
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Build / output
+dist/
+build/
+.out/
+.next/
+coverage/
+.cache/
+
+########################################
+# TypeScript
+########################################
+*.tsbuildinfo
+
+########################################
+# Environment
+########################################
+# Never commit secrets
+.env
+.env.*.local
+
+# Keep only the example file in Git
+!.env.example
+
+########################################
+# Prisma
+########################################
+.prisma/
+prisma/migrations/dev.db
+
+########################################
+# Docker / Database
+########################################
+# Local Postgres volume
+pgdata/
+docker-data/
+*.db
+
+# Ignore docker-compose override files
+docker-compose.override.yml
+
+########################################
+# IDE / OS
+########################################
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
