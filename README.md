@@ -104,4 +104,4 @@ Thanks goes to these amazing people:
 ---
 
 ## 📜 License
-MIT License © 2025 [shashank shakya](https://github.com/shashank-shakya)
+MIT License © 2025 [shashank shakya](https://github.com/shashank3103-dev)
