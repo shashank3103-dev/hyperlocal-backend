@@ -57,3 +57,7 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+# Ignore editor config files
+.editorconfig
+# Ignore global git config
+.gitconfig
