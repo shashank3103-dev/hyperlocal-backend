@@ -1,10 +1,19 @@
-import { Request, Response, NextFunction } from 'express';
-import { AppError } from '../utils/http.js';
-import { logger } from '../config/logger.js';
+import { NextFunction, Request, Response } from "express";
+import { AppError, fail } from "../utils/http.js";
 
-export function errorHandler(err: any, _req: Request, res: Response, _next: NextFunction) {
-  const status = err instanceof AppError ? err.status : 500;
-  const message = err instanceof AppError ? err.message : 'Internal Server Error';
-  if (status === 500) logger.error(err);
-  res.status(status).json({ success: false, message });
-}
+export const errorHandler = (
+  err: Error,
+  _req: Request,
+  res: Response,
+  _next: NextFunction
+) => {
+  if (err instanceof AppError) {
+    return res.status(err.status).json(fail(err.message, err.status, err.details));
+  }
+
+  console.error("[UNEXPECTED_ERROR]", err);
+
+  return res.status(500).json(
+    fail("Internal Server Error", 500)
+  );
+};

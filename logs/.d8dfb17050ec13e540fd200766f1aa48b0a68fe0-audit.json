@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/Users/kurmato/Desktop/hyperlocal-backend/logs/.d8dfb17050ec13e540fd200766f1aa48b0a68fe0-audit.json",
+    "files": [
+        {
+            "date": 1755771509992,
+            "name": "/Users/kurmato/Desktop/hyperlocal-backend/logs/app-2025-08-21.log",
+            "hash": "0f19dda5239a6e4111e53596eb4d2cb60b84a62bdb7f67c827c20dd07e7182ca"
+        }
+    ],
+    "hashType": "sha256"
+}

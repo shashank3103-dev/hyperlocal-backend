@@ -1,0 +1,32 @@
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+
+# Build outputs
+dist
+build
+.out
+.next
+coverage
+.cache
+
+# Env
+.env
+.env.*.local
+
+# Docker volumes
+pgdata
+docker-data
+
+# Prisma generated files
+.prisma
+
+# Git & editor
+.git
+.gitignore
+.vscode
+.idea
+.DS_Store
+Thumbs.db
