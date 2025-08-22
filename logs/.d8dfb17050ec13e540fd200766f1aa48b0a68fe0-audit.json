@@ -9,6 +9,11 @@
             "date": 1755771509992,
             "name": "/Users/kurmato/Desktop/hyperlocal-backend/logs/app-2025-08-21.log",
             "hash": "0f19dda5239a6e4111e53596eb4d2cb60b84a62bdb7f67c827c20dd07e7182ca"
+        },
+        {
+            "date": 1755860810730,
+            "name": "/Users/kurmato/Desktop/hyperlocal-backend/logs/app-2025-08-22.log",
+            "hash": "fb8bbfdd6acc32414793f22f9b6358184b419b635654c22c84f53600a2656b3d"
         }
     ],
     "hashType": "sha256"
