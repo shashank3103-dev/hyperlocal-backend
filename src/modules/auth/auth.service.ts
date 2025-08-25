@@ -12,10 +12,19 @@ import { config } from "../../config/env.js";
 import nodemailer from "nodemailer";
 import { verifyOtpTemplate } from "../../utils/emailTemplates.js";
 
+
+
+
+/** Utility: generate 6-digit OTP */
 function generateOtp() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+/** ======================
+ * AUTH SERVICES
+ * ====================== */
+
+/** Register a new user */
 export async function register(input: {
   name: string;
   email: string;
@@ -49,7 +58,7 @@ export async function register(input: {
   await transporter.sendMail({
     from: process.env.EMAIL_USER,
     to: input.email,
-     ...verifyOtpTemplate(input.name, otp),
+    ...verifyOtpTemplate(input.name, otp),
   });
 
   return {
@@ -58,6 +67,7 @@ export async function register(input: {
   };
 }
 
+/** Verify OTP */
 export async function verifyOtp(email: string, otp: string) {
   const user = await findUserByEmail(email);
   if (!user) throw new AppError("User not found", 404);
@@ -103,4 +113,99 @@ export async function me(userId: string) {
   if (!u) throw new AppError("User not found", 404);
   return u;
 }
+export async function refreshToken(userId: string) {
+  const u = await findUserById(userId);
+  if (!u) throw new AppError("User not found", 404);
+  const token = signJwt({ sub: u.id, role: u.role });
+  return {
+    token,
+    user: { id: u.id, name: u.name, email: u.email, role: u.role },
+  };
+}
+export async function changePassword(
+  userId: string,
+  oldPassword: string,
+  newPassword: string
+) {
+  const user = await findUserById(userId);
+  if (!user) throw new AppError("User not found", 404);
 
+  const ok = await bcrypt.compare(oldPassword, user.password);
+  if (!ok) throw new AppError("Old password is incorrect", 400);
+
+  const hash = await bcrypt.hash(newPassword, config.bcryptRounds);
+  await updateUser(userId, { password: hash });
+
+  return { message: "Password changed successfully" };
+}
+export async function forgotPassword(email: string) {
+  const user = await findUserByEmail(email);
+  if (!user) throw new AppError("User not found", 404);
+
+  const otp = generateOtp();
+  await updateUser(user.id, { otp });
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_USER,
+    to: email,
+    ...verifyOtpTemplate(user.name, otp),
+  });
+
+  return { message: "OTP sent to your email. Please verify." };
+}
+export async function resetPassword(
+  email: string,
+  otp: string,
+  newPassword: string
+) {
+  const user = await findUserByEmail(email);
+  if (!user) throw new AppError("User not found", 404);
+
+  if (user.otp !== otp) throw new AppError("Invalid OTP", 400);
+
+  const hash = await bcrypt.hash(newPassword, config.bcryptRounds);
+  await updateUser(user.id, { password: hash, otp: null });
+
+  return {
+    message:
+      "Password reset successful. You can now log in with your new password.",
+  };
+}
+export async function resendOtp(email: string) {
+  const user = await findUserByEmail(email);
+  if (!user) throw new AppError("User not found", 404);
+  if (user.isVerified) throw new AppError("User already verified", 400);
+
+  const otp = generateOtp();
+  await updateUser(user.id, { otp });
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_USER,
+    to: email,
+    ...verifyOtpTemplate(user.name, otp),
+  });
+
+  return { message: "OTP resent to your email. Please verify." };
+}
+export async function logout(userId: string) {
+  const user = await findUserById(userId);
+  if (!user) throw new AppError("User not found", 404);
+  // For JWT, typically nothing to do on server side for logout
+  return { message: "Logged out successfully" };
+}

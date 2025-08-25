@@ -16,7 +16,7 @@ export const createUser = (data: {
 export const findUserById = (id: string) =>
   prisma.user.findUnique({
     where: { id },
-    select: { id: true, name: true, email: true, role: true },
+    select: { id: true, name: true, email: true, role: true, password: true, isVerified: true,  },
   });
 export async function updateUser(id: string, data: any) {
   return prisma.user.update({
