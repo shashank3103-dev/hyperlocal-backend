@@ -1,7 +1,14 @@
 import { Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import speakeasy from "speakeasy";
+import geoip from "geoip-lite";
+import qrcode from "qrcode";
 import { AppError } from "../../utils/http.js";
-import { signJwt } from "../../utils/jwt.js";
+import {
+  signAccessToken,
+  signRefreshToken,
+  verifyRefreshToken,
+} from "../../utils/jwt.js";
 import {
   createUser,
   findUserByEmail,
@@ -11,9 +18,7 @@ import {
 import { config } from "../../config/env.js";
 import nodemailer from "nodemailer";
 import { verifyOtpTemplate } from "../../utils/emailTemplates.js";
-
-
-
+import { prisma } from "../../infra/prisma.js";
 
 /** Utility: generate 6-digit OTP */
 function generateOtp() {
@@ -78,10 +83,15 @@ export async function verifyOtp(email: string, otp: string) {
 
   const updated = await updateUser(user.id, { isVerified: true, otp: null });
 
-  const token = signJwt({ sub: updated.id, role: updated.role });
-
+  const accessToken = signAccessToken({ sub: updated.id, role: updated.role });
+  const refreshToken = signRefreshToken({
+    sub: updated.id,
+    role: updated.role,
+  });
+  await updateUser(updated.id, { refreshToken });
   return {
-    token,
+    accessToken,
+    refreshToken,
     user: {
       id: updated.id,
       name: updated.name,
@@ -100,10 +110,12 @@ export async function login(input: { email: string; password: string }) {
   const ok = await bcrypt.compare(input.password, user.password);
   if (!ok) throw new AppError("Invalid credentials", 401);
 
-  const token = signJwt({ sub: user.id, role: user.role });
-
+  const accessToken = signAccessToken({ sub: user.id, role: user.role });
+  const refreshToken = signRefreshToken({ sub: user.id, role: user.role });
+  await updateUser(user.id, { refreshToken });
   return {
-    token,
+    accessToken,
+    refreshToken,
     user: { id: user.id, name: user.name, email: user.email, role: user.role },
   };
 }
@@ -113,14 +125,28 @@ export async function me(userId: string) {
   if (!u) throw new AppError("User not found", 404);
   return u;
 }
-export async function refreshToken(userId: string) {
-  const u = await findUserById(userId);
-  if (!u) throw new AppError("User not found", 404);
-  const token = signJwt({ sub: u.id, role: u.role });
-  return {
-    token,
-    user: { id: u.id, name: u.name, email: u.email, role: u.role },
-  };
+
+export async function refresh(tokenFromClient: string) {
+  try {
+    // 1) verify the incoming refresh token
+    const payload = verifyRefreshToken(tokenFromClient);
+
+    // 2) fetch user and compare stored token (prevents reuse after logout/rotation)
+    const user = await findUserById(payload.sub);
+    if (!user || user.refreshToken !== tokenFromClient) {
+      throw new AppError("Invalid refresh token", 403);
+    }
+
+    // 3) rotate: issue new access + refresh and persist the new refresh
+    const newAccessToken = signAccessToken({ sub: user.id, role: user.role });
+    const newRefreshToken = signRefreshToken({ sub: user.id, role: user.role });
+
+    await updateUser(user.id, { refreshToken: newRefreshToken });
+
+    return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+  } catch {
+    throw new AppError("Invalid refresh token", 403);
+  }
 }
 export async function changePassword(
   userId: string,
@@ -206,6 +232,105 @@ export async function resendOtp(email: string) {
 export async function logout(userId: string) {
   const user = await findUserById(userId);
   if (!user) throw new AppError("User not found", 404);
+  await updateUser(userId, { refreshToken: null });
   // For JWT, typically nothing to do on server side for logout
   return { message: "Logged out successfully" };
+}
+export async function checkAvailability(input: {
+  email?: string;
+  phone?: string;
+}) {
+  if (input.email) {
+    const user = await findUserByEmail(input.email);
+    if (user) throw new AppError("Email already in use", 409);
+  }
+  // If phone field is added to User model, implement similar check here
+  return { available: true };
+}
+export async function verify2FA(userId: string, code: string) {
+  const user = await findUserById(userId);
+  if (!user) throw new AppError("User not found", 404);
+
+  if (!user.twoFASecret) {
+    throw new AppError("2FA not enabled for this user", 400);
+  }
+  const verified = speakeasy.totp.verify({
+    secret: user.twoFASecret,
+    encoding: "base32",
+    token: code,
+    window: 1, // allows ±30s clock drift
+  });
+  if (!verified) {
+    throw new AppError("Invalid 2FA code", 400);
+  }
+  await updateUser(userId, { isTwoFAEnabled: true });
+
+  return { message: "2FA verified successfully" };
+}
+
+export async function deleteAccount(userId: string) {
+  const user = await findUserById(userId);
+  if (!user) throw new AppError("User not found", 404);
+
+  await prisma.user.delete({ where: { id: userId } });
+  return { message: "Account deleted successfully" };
+}
+export async function listSessions(userId: string, ip?: string, userAgent?: string) {
+  const user = await findUserById(userId);
+  if (!user) throw new AppError("User not found", 404);
+
+  const geo = ip ? geoip.lookup(ip) : null;
+  const location = geo
+    ? `${geo.city || "Unknown City"}, ${geo.region || ""} ${geo.country}`
+    : null;
+
+  // Normally you'd fetch from DB, but here we simulate one current session
+  return [
+    {
+      id:
+      createdAt: new Date(),
+      ip: ip || "",
+      userAgent: userAgent || "unknown",
+      location,
+      isCurrent: true,
+    },
+  ];
+}
+export async function enable2FA(userId: string, method: string) {
+  const user = await findUserById(userId);
+  if (!user) throw new AppError("User not found", 404);
+  if (method !== "TOTP") {
+    throw new AppError("Only TOTP method is supported right now", 400);
+  }
+  const secret = speakeasy.generateSecret({
+    name: `Hyperlocal (${user.email})`, // will appear in Authenticator app
+    length: 20,
+  });
+  const qrCodeDataURL = await qrcode.toDataURL(secret.otpauth_url!);
+
+  // 3. Save the secret in DB (encrypted ideally)
+  await updateUser(userId, {
+    twoFASecret: secret.base32,
+    isTwoFAEnabled: false,
+  });
+
+  return {
+    method,
+    secret: secret.base32, // Secret user can type manually
+    otpauthUrl: secret.otpauth_url, // URL that Authenticator apps understand
+    qrCode: qrCodeDataURL, // Base64 QR image for frontend
+    message: "Scan this QR code in Google Authenticator and verify.",
+  };
+}
+export async function revokeSession(userId: string, sessionId: string) {
+  const user = await findUserById(userId);
+  if (!user) throw new AppError("User not found", 404);
+
+  // For JWT, we typically don't store sessions server-side
+  // This is a placeholder to illustrate the concept
+  if (sessionId !== "session1") {
+    throw new AppError("Session not found", 404);
+  }
+
+  return { message: "Session revoked successfully" };
 }

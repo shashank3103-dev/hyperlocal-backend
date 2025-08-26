@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { verifyJwt } from "../utils/jwt.js";
+import { verifyAccessToken } from "../utils/jwt.js";
 import { AppError } from "../utils/http.js";
 
 export interface AuthedRequest extends Request {
@@ -15,7 +15,10 @@ export function auth(required = true) {
     }
     const token = header.replace(/^Bearer\s+/i, "");
     try {
-      req.user = verifyJwt(token);
+      // req.user = verifyAccessToken(token);
+      const decoded = verifyAccessToken(token);
+      req.user = decoded;
+
       next();
     } catch {
       throw new AppError("Invalid token", 401);

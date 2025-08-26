@@ -1,7 +1,12 @@
 import { Router } from "express";
 import {
   changePasswordCtrl,
+  checkAvailabilityCtrl,
+  deleteAccountCtrl,
+  enable2FACtrl,
   forgotPasswordCtrl,
+  // googleLoginCtrl,
+  listSessionsCtrl,
   loginCtrl,
   logoutCtrl,
   meCtrl,
@@ -9,17 +14,24 @@ import {
   registerCtrl,
   resendOtpCtrl,
   resetPasswordCtrl,
+  revokeSessionCtrl,
+  verify2FACtrl,
   verifyOtpCtrl,
 } from "./auth.controller.js";
 import { validate } from "../../middlewares/validate.js";
 import {
+  availabilitySchema,
   changePasswordSchema,
+  enable2FASchema,
   forgotPasswordSchema,
+  googleLoginSchema,
   loginSchema,
   logoutSchema,
   refreshTokenSchema,
   registerSchema,
   resetPasswordSchema,
+  revokeSessionSchema,
+  verify2FASchema,
   verifyOtpSchema,
 } from "./auth.schemas.js";
 import { auth } from "../../middlewares/auth.js";
@@ -40,5 +52,20 @@ router.post("/reset-password", validate(resetPasswordSchema), resetPasswordCtrl)
 router.get("/me", auth(true), meCtrl);
 router.post("/change-password", auth(true), validate(changePasswordSchema), changePasswordCtrl);
 
+// Social login
+// router.post("/google-login", validate(googleLoginSchema), googleLoginCtrl);
 
+// Availability check
+router.post("/check-availability", validate(availabilitySchema), checkAvailabilityCtrl);
+
+// Session management
+router.get("/sessions", auth(true), listSessionsCtrl);
+router.post("/revoke-session", auth(true), validate(revokeSessionSchema), revokeSessionCtrl);
+
+// Two-Factor Authentication (2FA)
+router.post("/enable-2fa", auth(true),  enable2FACtrl);
+router.post("/verify-2fa",auth(true), verify2FACtrl);
+
+// Account deletion
+router.delete("/delete-account", auth(true), deleteAccountCtrl);
 export default router;

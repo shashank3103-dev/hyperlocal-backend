@@ -51,3 +51,24 @@ export const forgotPasswordSchema = z.object({
     email: z.string().email(),
   }),
 });
+export const availabilitySchema = z.object({
+  email: z.string().email().optional(),
+  phone: z.string().min(10).max(15).optional(),
+});
+
+export const googleLoginSchema = z.object({
+  token: z.string().min(10), // Google ID token
+});
+
+export const revokeSessionSchema = z.object({
+  sessionId: z.string().uuid(),
+});
+
+export const enable2FASchema = z.object({
+  method: z.enum(["TOTP", "SMS"]),
+});
+
+export const verify2FASchema = z.object({
+  email: z.string().email(),
+  code: z.string().min(4).max(8),
+});

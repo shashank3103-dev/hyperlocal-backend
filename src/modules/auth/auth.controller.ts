@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import * as svc from "./auth.service.js";
 import { ok } from "../../utils/http.js";
+import { AuthedRequest } from "../../middlewares/auth.js";
 
 export const registerCtrl = async (
   req: Request,
@@ -63,7 +64,7 @@ export const refreshTokenCtrl = async (
 ) => {
   try {
     const { refreshToken } = req.body;
-    const data = await svc.refreshToken(refreshToken);
+    const data = await svc.refresh(refreshToken);
     res.status(200).json(ok(data, "Token refreshed"));
   } catch (err) {
     next(err);
@@ -90,9 +91,7 @@ export const forgotPasswordCtrl = async (
   try {
     const { email } = req.body;
     await svc.forgotPassword(email);
-    res
-      .status(200)
-      .json(ok(null, "OTP sent to your email. Please verify."));
+    res.status(200).json(ok(null, "OTP sent to your email. Please verify."));
   } catch (err) {
     next(err);
   }
@@ -105,7 +104,14 @@ export const resetPasswordCtrl = async (
   try {
     const { email, otp, newPassword } = req.body;
     await svc.resetPassword(email, otp, newPassword);
-    res.status(200).json(ok(null, "Password reset successful. You can now log in with your new password."));
+    res
+      .status(200)
+      .json(
+        ok(
+          null,
+          "Password reset successful. You can now log in with your new password."
+        )
+      );
   } catch (err) {
     next(err);
   }
@@ -138,3 +144,98 @@ export const resendOtpCtrl = async (
   }
 };
 
+// export const googleLoginCtrl = async (req: Request, res: Response, next: NextFunction) => {
+//   try {
+//     const data = await svc.googleLogin(req.body.token);
+//     res.status(200).json(ok(data, "Google login successful"));
+//   } catch (err) {
+//     next(err);
+//   }
+// };
+export const checkAvailabilityCtrl = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email } = req.body;
+    const available = await svc.checkAvailability(email);
+    res.status(200).json(ok({ available }, "Availability checked"));
+  } catch (err) {
+    next(err);
+  }
+};
+export const listSessionsCtrl = async (
+  req: any,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const sessions = await svc.listSessions(req.user.sub);
+    res.status(200).json(ok(sessions, "Active sessions"));
+  } catch (err) {
+    next(err);
+  }
+};
+// Enable 2FA
+export const enable2FACtrl = async (
+  req: any,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { method } = req.body; // e.g., 'TOTP'
+    const data = await svc.enable2FA(req.user.sub, method);
+    res.status(200).json(ok(data, "2FA enabled"));
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Verify 2FA
+export const verify2FACtrl = async (
+  req: AuthedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { code } = req.body;
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+      if (!code) {
+      return res.status(400).json({ message: "2FA code is required" });
+    }
+    const data = await svc.verify2FA(req.user.sub, code);
+    res.status(200).json(ok(data, "2FA verified"));
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Delete account
+export const deleteAccountCtrl = async (
+  req: any,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    await svc.deleteAccount(req.user.sub);
+    res.status(200).json(ok(null, "Account deleted successfully"));
+  } catch (err) {
+    next(err);
+  }
+};
+export const revokeSessionCtrl = async (
+  req: any,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { sessionId } = req.body;
+    await svc.revokeSession(req.user.sub, sessionId);
+    res.status(200).json(ok(null, "Session revoked successfully"));
+  } catch (err) {
+    next(err);
+  }
+};
