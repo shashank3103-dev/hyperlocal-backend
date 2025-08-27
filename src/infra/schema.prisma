@@ -8,15 +8,46 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      Role     @default(CUSTOMER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
+  id             String   @id @default(uuid())
+  name           String
+  email          String   @unique
+  password       String
+  role           Role     @default(CUSTOMER)
+  isVerified     Boolean  @default(false)
+  otp            String?
+  refreshToken   String?
 
+  twoFASecret    String? // nullable, only set when enabling 2FA
+  isTwoFAEnabled Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  Session Session[]
+  Shop Shop[]
+}
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  ip        String?
+  userAgent String?
+  location  String?
+  isCurrent Boolean   @default(true)
+
+  createdAt DateTime  @default(now())
+}
+model Shop {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  address     String
+  latitude    Float
+  longitude   Float
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
 enum Role {
   CUSTOMER
   SELLER

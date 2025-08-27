@@ -9,6 +9,31 @@
             "date": 1755771509993,
             "name": "/Users/kurmato/Desktop/hyperlocal-backend/logs/error-2025-08-21.log",
             "hash": "39cb7931ba741affe0b4ee6b07e4e3c833065f43cf26c19e50e9f8818b15ee80"
+        },
+        {
+            "date": 1755860810732,
+            "name": "/Users/kurmato/Desktop/hyperlocal-backend/logs/error-2025-08-22.log",
+            "hash": "1b85bd691fb49e38c1828ff46c8a48c3a1edcaa60fa056dbee2c43d1137e9949"
+        },
+        {
+            "date": 1756057764132,
+            "name": "/Users/kurmato/Desktop/hyperlocal-backend/logs/error-2025-08-24.log",
+            "hash": "30657ee204a97bb275a06325b44a0dcb247cc8e4e6b292163e4167f7f2a58417"
+        },
+        {
+            "date": 1756060860785,
+            "name": "/Users/kurmato/Desktop/hyperlocal-backend/logs/error-2025-08-25.log",
+            "hash": "44edeb373770e996143b9ad1ce66aaec71d605e7c070f8d491070a635f8d1624"
+        },
+        {
+            "date": 1756195604530,
+            "name": "/Users/kurmato/Desktop/hyperlocal-backend/logs/error-2025-08-26.log",
+            "hash": "2045e822022195f758dd00b2d8127e1b0d96bae9ebc527b92250dc892c4a050e"
+        },
+        {
+            "date": 1756233877979,
+            "name": "/Users/kurmato/Desktop/hyperlocal-backend/logs/error-2025-08-27.log",
+            "hash": "119de03912c08d3cf68431b1dd6ec617c82e903ace4dce5f19f54ad81265a581"
         }
     ],
     "hashType": "sha256"

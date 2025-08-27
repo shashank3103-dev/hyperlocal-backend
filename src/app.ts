@@ -11,6 +11,7 @@ app.use(morgan("dev"));
 
 app.use("/api/v1", mainRoutes);
 
+
 // 404
 app.use((_req, res) =>
   res.status(404).json({ success: false, message: "Not Found" })
