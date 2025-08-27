@@ -28,3 +28,7 @@ export const fail = (message: string, status = 400, details?: unknown) => ({
   status,
   details,
 });
+export const result = (message: string) => ({
+  success: true,
+  message,
+});

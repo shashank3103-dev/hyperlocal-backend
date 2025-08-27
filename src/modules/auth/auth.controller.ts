@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import * as svc from "./auth.service.js";
-import { ok } from "../../utils/http.js";
+import { ok, result } from "../../utils/http.js";
 import { AuthedRequest } from "../../middlewares/auth.js";
 
 export const registerCtrl = async (
@@ -41,7 +41,16 @@ export const loginCtrl = async (
   next: NextFunction
 ) => {
   try {
-    const data = await svc.login(req.body);
+    let ip =
+      (req.headers["x-forwarded-for"] as string)?.split(",")[0] ||
+      req.connection.remoteAddress ||
+      req.ip;
+    if (ip === "::1" || ip === "0:0:0:0:0:0:0:1") {
+      ip = "127.0.0.1";
+    }
+
+    const userAgent = req.headers["user-agent"];
+    const data = await svc.login(req.body, ip, userAgent);
     res.status(200).json(ok(data, "Login successful"));
   } catch (err) {
     next(err);
@@ -166,11 +175,14 @@ export const checkAvailabilityCtrl = async (
   }
 };
 export const listSessionsCtrl = async (
-  req: any,
+  req: AuthedRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
     const sessions = await svc.listSessions(req.user.sub);
     res.status(200).json(ok(sessions, "Active sessions"));
   } catch (err) {
@@ -203,7 +215,7 @@ export const verify2FACtrl = async (
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-      if (!code) {
+    if (!code) {
       return res.status(400).json({ message: "2FA code is required" });
     }
     const data = await svc.verify2FA(req.user.sub, code);
@@ -227,14 +239,20 @@ export const deleteAccountCtrl = async (
   }
 };
 export const revokeSessionCtrl = async (
-  req: any,
+  req: AuthedRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { sessionId } = req.body;
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    if (!sessionId) {
+      return res.status(400).json({ message: "sessionId is required" });
+    }
     await svc.revokeSession(req.user.sub, sessionId);
-    res.status(200).json(ok(null, "Session revoked successfully"));
+    res.status(200).json(ok(result, "Session revoked successfully"));
   } catch (err) {
     next(err);
   }

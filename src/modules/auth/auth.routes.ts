@@ -59,8 +59,8 @@ router.post("/change-password", auth(true), validate(changePasswordSchema), chan
 router.post("/check-availability", validate(availabilitySchema), checkAvailabilityCtrl);
 
 // Session management
-router.get("/sessions", auth(true), listSessionsCtrl);
-router.post("/revoke-session", auth(true), validate(revokeSessionSchema), revokeSessionCtrl);
+router.get("/sessions", auth(true),listSessionsCtrl);
+router.post("/revoke-session", auth(true),  revokeSessionCtrl);
 
 // Two-Factor Authentication (2FA)
 router.post("/enable-2fa", auth(true),  enable2FACtrl);
