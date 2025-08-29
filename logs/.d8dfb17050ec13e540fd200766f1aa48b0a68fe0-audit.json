@@ -34,6 +34,16 @@
             "date": 1756233877977,
             "name": "/Users/kurmato/Desktop/hyperlocal-backend/logs/app-2025-08-27.log",
             "hash": "6f00df98b5b6608230e6f04f7d4cba0a7f6bbd13639efdcd1cda47259d5a2e4e"
+        },
+        {
+            "date": 1756384840664,
+            "name": "/Users/kurmato/Desktop/hyperlocal-backend/logs/app-2025-08-28.log",
+            "hash": "c96ef449c43ea41e345d79385812c1462b215fab863aa79893ce5dcca9c345ae"
+        },
+        {
+            "date": 1756458973509,
+            "name": "/Users/kurmato/Desktop/hyperlocal-backend/logs/app-2025-08-29.log",
+            "hash": "394d997b20eb5f5315a520192c393a7c052d4e49911d6bb44e9888465ab37610"
         }
     ],
     "hashType": "sha256"

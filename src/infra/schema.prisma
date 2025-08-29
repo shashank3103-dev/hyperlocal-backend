@@ -8,46 +8,85 @@ datasource db {
 }
 
 model User {
-  id             String   @id @default(uuid())
+  id             String         @id @default(uuid())
   name           String
-  email          String   @unique
+  email          String         @unique
   password       String
-  role           Role     @default(CUSTOMER)
-  isVerified     Boolean  @default(false)
+  role           Role           @default(CUSTOMER)
+  isVerified     Boolean        @default(false)
   otp            String?
   refreshToken   String?
-
   twoFASecret    String? // nullable, only set when enabling 2FA
-  isTwoFAEnabled Boolean  @default(false)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  Session Session[]
-  Shop Shop[]
+  isTwoFAEnabled Boolean        @default(false)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  // relations
+  Session        Session[]
+  Shop           Shop[]
+  shopFavorites  ShopFavorite[]
 }
+
 model Session {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   ip        String?
   userAgent String?
   location  String?
-  isCurrent Boolean   @default(true)
+  isCurrent Boolean @default(true)
 
-  createdAt DateTime  @default(now())
+  createdAt DateTime @default(now())
 }
+
 model Shop {
-  id          String   @id @default(uuid())
+  id          String         @id @default(uuid())
   name        String
   description String?
   address     String
   latitude    Float
   longitude   Float
   ownerId     String
-  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner       User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  status      ShopStatus     @default(PENDING) // 👈 shop must be approved by ADMIN
+  // relations
+  items       Item[]
+  favorites   ShopFavorite[]
+}
+
+model ShopFavorite {
+  id     String @id @default(uuid())
+  shopId String
+  userId String
+  // relations
+  shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([shopId, userId]) // prevent duplicate follows
+}
+
+model Item {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  price       Float
+  stock       Int      @default(0)
+  shopId      String
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+enum ShopStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum Role {
   CUSTOMER
   SELLER
