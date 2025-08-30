@@ -80,13 +80,16 @@ export const refreshTokenCtrl = async (
   }
 };
 export const logoutCtrl = async (
-  req: Request,
+  req: AuthedRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const { refreshToken } = req.body;
-    await svc.logout(refreshToken);
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    await svc.logout(req.user.sub);
     res.status(200).json(ok(null, "Logged out successfully"));
   } catch (err) {
     next(err);

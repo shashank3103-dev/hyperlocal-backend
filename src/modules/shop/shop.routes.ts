@@ -77,7 +77,7 @@ router.put(
   "/:shopId/approve",
   auth(true),
   requireRole("ADMIN"),
-  validate(shopIdParamSchema),
+  // validate(shopIdParamSchema),
   approveShopCtrl
 );
 router.put(

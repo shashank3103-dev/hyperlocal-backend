@@ -36,6 +36,7 @@ export async function register(input: {
 }) {
   const existing = await findUserByEmail(input.email);
   if (existing) throw new AppError("Email already in use", 409);
+  
   const hash = await bcrypt.hash(input.password, config.bcryptRounds);
   const role: Role = input.role ?? "CUSTOMER";
   const otp = generateOtp();
@@ -214,6 +215,7 @@ export async function resendOtp(email: string) {
 export async function logout(userId: string) {
   const user = await findUserById(userId);
   if (!user) throw new AppError("User not found", 404);
+  
   await updateUser(userId, { refreshToken: null });
   return { message: "Logged out successfully" };
 }

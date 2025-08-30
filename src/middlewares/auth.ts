@@ -15,10 +15,8 @@ export function auth(required = true) {
     }
     const token = header.replace(/^Bearer\s+/i, "");
     try {
-      // req.user = verifyAccessToken(token);
       const decoded = verifyAccessToken(token);
       req.user = decoded;
-
       next();
     } catch {
       throw new AppError("Invalid token", 401);

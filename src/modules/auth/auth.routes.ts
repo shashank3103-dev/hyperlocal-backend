@@ -29,42 +29,62 @@ import {
   logoutSchema,
   refreshTokenSchema,
   registerSchema,
+  resendOtpSchema,
   resetPasswordSchema,
   revokeSessionSchema,
   verify2FASchema,
   verifyOtpSchema,
 } from "./auth.schemas.js";
-import { auth } from "../../middlewares/auth.js";
+import { auth, requireRole } from "../../middlewares/auth.js";
 
 const router = Router();
 
 // Public routes
 router.post("/register", validate(registerSchema), registerCtrl);
 router.post("/verify-otp", validate(verifyOtpSchema), verifyOtpCtrl);
-router.post("/resend-otp", validate(verifyOtpSchema), resendOtpCtrl); // reuse verifyOtpSchema since it only needs email
+router.post("/resend-otp", validate(resendOtpSchema), resendOtpCtrl); // reuse verifyOtpSchema since it only needs email
 router.post("/login", validate(loginSchema), loginCtrl);
 router.post("/refresh-token", validate(refreshTokenSchema), refreshTokenCtrl);
-router.post("/logout", validate(logoutSchema), logoutCtrl);
-router.post("/forgot-password", validate(forgotPasswordSchema), forgotPasswordCtrl);
-router.post("/reset-password", validate(resetPasswordSchema), resetPasswordCtrl);
+router.post("/logout", 
+   auth(true),
+  logoutCtrl);
+router.post(
+  "/forgot-password",
+  validate(forgotPasswordSchema),
+  forgotPasswordCtrl
+);
+router.post(
+  "/reset-password",
+  validate(resetPasswordSchema),
+  resetPasswordCtrl
+);
 
 // Protected routes
 router.get("/me", auth(true), meCtrl);
-router.post("/change-password", auth(true), validate(changePasswordSchema), changePasswordCtrl);
+router.post(
+  "/change-password",
+  auth(true),
+  validate(changePasswordSchema),
+  changePasswordCtrl
+);
 
 // Social login
 // router.post("/google-login", validate(googleLoginSchema), googleLoginCtrl);
 
 // Availability check
-router.post("/check-availability", validate(availabilitySchema), checkAvailabilityCtrl);
+router.post(
+  "/check-availability",
+  validate(availabilitySchema),
+  checkAvailabilityCtrl
+);
 
 // Session management
-router.get("/sessions", auth(true),listSessionsCtrl);
-router.post("/revoke-session", auth(true),  revokeSessionCtrl);
+router.get("/sessions", auth(true), listSessionsCtrl);
+router.post("/revoke-session", auth(true), revokeSessionCtrl);
 
 // Two-Factor Authentication (2FA)
-router.post("/enable-2fa", auth(true),  enable2FACtrl);
-router.post("/verify-2fa",auth(true), verify2FACtrl);
+router.post("/enable-2fa", auth(true), enable2FACtrl);
+router.post("/verify-2fa", auth(true), verify2FACtrl);
 
 // Account deletion
 router.delete("/delete-account", auth(true), deleteAccountCtrl);
